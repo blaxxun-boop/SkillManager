@@ -1,0 +1,6 @@
+bin
+obj
+/packages
+SkillManager.sln.DotSettings.user
+.idea
+.vs
