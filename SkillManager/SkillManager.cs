@@ -128,9 +128,11 @@ namespace SkillManager
 				if (skill.Configurable)
 				{
 					ConfigEntry<float> skillGain = config(skill.skillName, "Skill gain factor", skill.SkillGainFactor, new ConfigDescription("The rate at which you gain experience for the skill.", new AcceptableValueRange<float>(0.01f, 5f)));
+					skill.SkillGainFactor = skillGain.Value;
 					skillGain.SettingChanged += (_, _) => skill.SkillGainFactor = skillGain.Value;
 					
 					ConfigEntry<float> skillEffect = config(skill.skillName, "Skill effect factor", skill.SkillEffectFactor, new ConfigDescription("The power of the skill, based on the default power.", new AcceptableValueRange<float>(0.01f, 5f)));
+					skill.SkillEffectFactor = skillEffect.Value;
 					skillEffect.SettingChanged += (_, _) => skill.SkillEffectFactor = skillEffect.Value;
 				}
 			}
