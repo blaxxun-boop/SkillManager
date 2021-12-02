@@ -33,8 +33,12 @@ After that, simply add `using SkillManager;` to your mod and use the `Skill` cla
 
 The SkillManager also adds two extension methods `GetSkillFactor` and `RaiseSkill` on `Character` and `Skills` classes to get and increase the skill in your code by skill name.
 
-## Example project
+## Example projects
 
 https://github.com/blaxxun-boop/Tenacity
 
 This adds a skill `Tenacity`, which reduces the damage taken slightly. The `tenacity-icon.png` file is in a directory called `icons`.
+
+https://github.com/blaxxun-boop/Building
+
+This adds a skill `Building`, which increases the health of pieces built by you.
