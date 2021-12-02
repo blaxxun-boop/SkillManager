@@ -42,3 +42,7 @@ This adds a skill `Tenacity`, which reduces the damage taken slightly. The `tena
 https://github.com/blaxxun-boop/Building
 
 This adds a skill `Building`, which increases the health of pieces built by you.
+
+https://github.com/blaxxun-boop/Evasion
+
+This adds a skill `Evasion`, which reduces the stamina usage of dodging.
