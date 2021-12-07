@@ -33,8 +33,10 @@ namespace SkillManager
 
 		public float SkillEffectFactor = 1;
 		public bool Configurable = false;
-		
-		public Skill(string englishName, string icon)
+
+		public Skill(string englishName, string icon) : this(englishName, loadSprite(icon, 64, 64)) { }
+
+		public Skill(string englishName, Sprite icon)
 		{
 			Skills.SkillType skill = fromName(englishName);
 			string sanitizedName = new Regex("[^a-zA-Z]").Replace(englishName, "_");
@@ -44,7 +46,7 @@ namespace SkillManager
 			skillDef = new Skills.SkillDef
 			{
 				m_description = "$skilldesc_" + sanitizedName,
-				m_icon = loadSprite(icon, 64, 64),
+				m_icon = icon,
 				m_increseStep = 1f,
 				m_skill = skill
 			};
