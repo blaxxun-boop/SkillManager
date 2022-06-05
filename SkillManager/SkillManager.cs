@@ -78,11 +78,26 @@ public class Skill
 
 	public static Skills.SkillType fromName(string englishName) => (Skills.SkillType)Math.Abs(englishName.GetStableHashCode());
 
+	[PublicAPI]
 	public class LocalizeKey
 	{
-		private readonly string Key;
+		private static readonly List<LocalizeKey> keys = new();
+
+		public readonly string Key;
+		public readonly Dictionary<string, string> Localizations = new();
 
 		public LocalizeKey(string key) => Key = key.Replace("$", "");
+
+		public void Alias(string alias)
+		{
+			Localizations.Clear();
+			if (!alias.Contains("$"))
+			{
+				alias = $"${alias}";
+			}
+			Localizations["alias"] = alias;
+			Localization.instance.AddWord(Key, Localization.instance.Localize(alias));
+		}
 
 		public LocalizeKey English(string key) => addForLang("English", key);
 		public LocalizeKey Swedish(string key) => addForLang("Swedish", key);
@@ -121,6 +136,7 @@ public class Skill
 
 		private LocalizeKey addForLang(string lang, string value)
 		{
+			Localizations[lang] = value;
 			if (Localization.instance.GetSelectedLanguage() == lang)
 			{
 				Localization.instance.AddWord(Key, value);
@@ -131,6 +147,22 @@ public class Skill
 			}
 			return this;
 		}
+
+		[HarmonyPriority(Priority.LowerThanNormal)]
+		internal static void AddLocalizedKeys(Localization __instance, string language)
+		{
+			foreach (LocalizeKey key in keys)
+			{
+				if (key.Localizations.TryGetValue(language, out string Translation) || key.Localizations.TryGetValue("English", out Translation))
+				{
+					__instance.AddWord(key.Key, Translation);
+				}
+				else if (key.Localizations.TryGetValue("alias", out string alias))
+				{
+					Localization.instance.AddWord(key.Key, Localization.instance.Localize(alias));
+				}
+			}
+		}
 	}
 
 	static Skill()
@@ -140,7 +172,13 @@ public class Skill
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Skills), nameof(Skills.GetSkillDef)), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Skill), nameof(Patch_Skills_GetSkillDef))));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Skills), nameof(Skills.CheatRaiseSkill)), new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Skill), nameof(Patch_Skills_CheatRaiseskill))));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Skills), nameof(Skills.CheatResetSkill)), new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Skill), nameof(Patch_Skills_CheatResetSkill))));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Localization), nameof(Localization.LoadCSV)), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(LocalizeKey), nameof(LocalizeKey.AddLocalizedKeys))));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Terminal), nameof(Terminal.InitTerminal)), new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Skill), nameof(Patch_Terminal_InitTerminal_Prefix))), new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Skill), nameof(Patch_Terminal_InitTerminal))));
+	}
+
+	private class ConfigurationManagerAttributes
+	{
+		[UsedImplicitly] public string? Category;
 	}
 
 	private static void Patch_FejdStartup()
@@ -149,11 +187,15 @@ public class Skill
 		{
 			if (skill.Configurable)
 			{
-				ConfigEntry<float> skillGain = config(skill.skillName, "Skill gain factor", skill.SkillGainFactor, new ConfigDescription("The rate at which you gain experience for the skill.", new AcceptableValueRange<float>(0.01f, 5f)));
+				string nameKey = skill.Name.Key;
+				string englishName = new Regex("['[\"\\]]").Replace(english.Localize(nameKey), "").Trim();
+				string localizedName = Localization.instance.Localize(nameKey).Trim();
+
+				ConfigEntry<float> skillGain = config(englishName, "Skill gain factor", skill.SkillGainFactor, new ConfigDescription("The rate at which you gain experience for the skill.", new AcceptableValueRange<float>(0.01f, 5f), new ConfigurationManagerAttributes { Category = localizedName }));
 				skill.SkillGainFactor = skillGain.Value;
 				skillGain.SettingChanged += (_, _) => skill.SkillGainFactor = skillGain.Value;
 
-				ConfigEntry<float> skillEffect = config(skill.skillName, "Skill effect factor", skill.SkillEffectFactor, new ConfigDescription("The power of the skill, based on the default power.", new AcceptableValueRange<float>(0.01f, 5f)));
+				ConfigEntry<float> skillEffect = config(englishName, "Skill effect factor", skill.SkillEffectFactor, new ConfigDescription("The power of the skill, based on the default power.", new AcceptableValueRange<float>(0.01f, 5f), new ConfigurationManagerAttributes { Category = localizedName }));
 				skill.SkillEffectFactor = skillEffect.Value;
 				skillEffect.SettingChanged += (_, _) => skill.SkillEffectFactor = skillEffect.Value;
 			}
@@ -273,6 +315,22 @@ public class Skill
 	}
 
 	private static Sprite loadSprite(string name, int width, int height) => Sprite.Create(loadTexture(name), new Rect(0, 0, width, height), Vector2.zero);
+
+	private static Localization? _english;
+
+	private static Localization english
+	{
+		get
+		{
+			if (_english == null)
+			{
+				_english = new Localization();
+				_english.SetupLanguage("English");
+			}
+
+			return _english;
+		}
+	}
 
 	private static BaseUnityPlugin? _plugin;
 	private static BaseUnityPlugin plugin => _plugin ??= (BaseUnityPlugin)BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(Assembly.GetExecutingAssembly().DefinedTypes.First(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
