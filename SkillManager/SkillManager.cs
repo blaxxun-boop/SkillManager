@@ -81,7 +81,7 @@ public class Skill
 			m_description = "$skilldesc_" + sanitizedName,
 			m_icon = icon,
 			m_increseStep = 1f,
-			m_skill = skill
+			m_skill = skill,
 		};
 		internalSkillName = sanitizedName;
 		skillName = englishName;
@@ -131,7 +131,11 @@ public class Skill
 		public readonly string Key;
 		public readonly Dictionary<string, string> Localizations = new();
 
-		public LocalizeKey(string key) => Key = key.Replace("$", "");
+		public LocalizeKey(string key)
+		{
+			Key = key.Replace("$", "");
+			keys.Add(this);
+		}
 
 		public void Alias(string alias)
 		{
@@ -204,7 +208,7 @@ public class Skill
 				}
 				else if (key.Localizations.TryGetValue("alias", out string alias))
 				{
-					Localization.instance.AddWord(key.Key, Localization.instance.Localize(alias));
+					__instance.AddWord(key.Key, Localization.instance.Localize(alias));
 				}
 			}
 		}
